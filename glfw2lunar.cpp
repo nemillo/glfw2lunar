@@ -7,6 +7,10 @@
 #include <iostream>
 #include <time.h>
 #include <stdbool.h> 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <chrono>
 
 #define GL_LOG_FILE "gl.log"
 
@@ -73,8 +77,8 @@ void glfw_error_callback( int error, const char *description ) {
 }
 
 // keep track of window size for things like the viewport and the mouse cursor
-int g_gl_width = 1024;
-int g_gl_height = 800;
+float g_gl_width = 1024.0;
+float g_gl_height = 800.0;
 
 /* we will tell GLFW to run this function whenever the framebuffer size is changed */
 void glfw_framebuffer_size_callback( GLFWwindow *window, int width, int height ) {
@@ -154,6 +158,7 @@ void _update_fps_counter( GLFWwindow *window ) {
 }
 
 int main() {
+	auto t_start = std::chrono::high_resolution_clock::now();
 	GLFWwindow *window;
 	const GLubyte *renderer;
 	const GLubyte *version;
@@ -162,8 +167,11 @@ int main() {
 	GLuint vao;
 	const char *vertex_shader = "#version 410\n"
 		"in vec3 vp;"
+		"uniform mat4 model;"
+		"uniform mat4 view;"
+		"uniform mat4 proj;"
 		"void main() {"
-		"  gl_Position = vec4( vp, 1.0 );"
+		"  gl_Position = proj * view * model * vec4( vp, 1.0 );"
 		"}";
 
 	const char *fragment_shader = "#version 410\n"
@@ -195,8 +203,7 @@ int main() {
 		vmode->width, vmode->height, "Extended GL Init", mon, NULL
 	);*/
 
-	window =
-		glfwCreateWindow( g_gl_width, g_gl_height, "Extended Init.", NULL, NULL );
+	window = glfwCreateWindow( g_gl_width, g_gl_height, "Extended Init", NULL, NULL );
 	if ( !window ) {
 		fprintf( stderr, "ERROR: could not open window with GLFW3\n" );
 		glfwTerminate();
@@ -220,37 +227,63 @@ int main() {
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST ); // enable depth-testing
 	glDepthFunc( GL_LESS );		 // depth-testing interprets a smaller value as "closer"
-	while ( !glfwWindowShouldClose( window ) ) {
-		glGenBuffers( 1, &vbo );
-		glBindBuffer( GL_ARRAY_BUFFER, vbo );
-		glBufferData( GL_ARRAY_BUFFER, 9 * sizeof( GLfloat ), points, GL_STATIC_DRAW );
-
-		glGenVertexArrays( 1, &vao );
-		glBindVertexArray( vao );
-		glEnableVertexAttribArray( 0 );
-		glBindBuffer( GL_ARRAY_BUFFER, vbo );
-		glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-
-		vs = glCreateShader( GL_VERTEX_SHADER );
-		glShaderSource( vs, 1, &vertex_shader, NULL );
-		glCompileShader( vs );
-		fs = glCreateShader( GL_FRAGMENT_SHADER );
-		glShaderSource( fs, 1, &fragment_shader, NULL );
-		glCompileShader( fs );
-		shader_programme = glCreateProgram();
-		glAttachShader( shader_programme, fs );
-		glAttachShader( shader_programme, vs );
-		glLinkProgram( shader_programme );
-
-		previous_seconds = glfwGetTime();
 	
+	glGenBuffers( 1, &vbo );
+	glBindBuffer( GL_ARRAY_BUFFER, vbo );
+	glBufferData( GL_ARRAY_BUFFER, 9 * sizeof( GLfloat ), points, GL_STATIC_DRAW );
+
+	glGenVertexArrays( 1, &vao );
+	glBindVertexArray( vao );
+	glEnableVertexAttribArray( 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, vbo );
+	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+
+	vs = glCreateShader( GL_VERTEX_SHADER );
+	glShaderSource( vs, 1, &vertex_shader, NULL );
+	glCompileShader( vs );
+	fs = glCreateShader( GL_FRAGMENT_SHADER );
+	glShaderSource( fs, 1, &fragment_shader, NULL );
+	glCompileShader( fs );
+	shader_programme = glCreateProgram();
+	glAttachShader( shader_programme, fs );
+	glAttachShader( shader_programme, vs );
+	glLinkProgram( shader_programme );
+	glUseProgram( shader_programme );
+	glBindVertexArray( vao );
+
+	GLint uniModel = glGetUniformLocation(shader_programme, "model");
+
+    // Set up projection
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(1.2f, 1.2f, 1.2f),
+        glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::vec3(0.0f, 0.0f, 1.0f)
+    );
+
+    GLint uniView = glGetUniformLocation(shader_programme, "view");
+    glUniformMatrix4fv(uniView, 1, GL_FALSE, glm::value_ptr(view));
+
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), g_gl_width / g_gl_height, 1.0f, 10.0f);
+    GLint uniProj = glGetUniformLocation(shader_programme, "proj");
+    glUniformMatrix4fv(uniProj, 1, GL_FALSE, glm::value_ptr(proj));
+
+	previous_seconds = glfwGetTime();
+	while ( !glfwWindowShouldClose( window ) ) {
 		_update_fps_counter( window );
 		// wipe the drawing surface clear
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glViewport( 0, 0, g_gl_width, g_gl_height );
 
-		glUseProgram( shader_programme );
-		glBindVertexArray( vao );
+		auto t_now = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
+
+		glm::mat4 model = glm::mat4(1.0f);
+        model = glm::translate(
+            model,
+            glm::vec3(0.0f, 0.0f, time * 0.1* 1.0f)
+        );
+        glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
+		
 		// draw points 0-3 from the currently bound VAO with current in-use shader
 		glDrawArrays( GL_TRIANGLES, 0, 3 );
 		// update other events like input handling
@@ -258,12 +291,10 @@ int main() {
 		if ( GLFW_PRESS == glfwGetKey( window, GLFW_KEY_ESCAPE ) ) {
 			glfwSetWindowShouldClose( window, 1 );
 		}
-		for (int i=0;i<9;i=i+3){
-			points[i] = points[i] + 0.001;
-			//std::cout << points[i] << "\n";
-		}
+		
 		// put the stuff we've been drawing onto the display
 		glfwSwapBuffers( window );
+		printf("%f \n", time);
 	}
 
 	// close GL context and any other GLFW resources
