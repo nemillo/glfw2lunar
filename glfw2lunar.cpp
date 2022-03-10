@@ -221,28 +221,28 @@ int main() {
 	glEnable( GL_DEPTH_TEST ); // enable depth-testing
 	glDepthFunc( GL_LESS );		 // depth-testing interprets a smaller value as "closer"
 	while ( !glfwWindowShouldClose( window ) ) {
-	glGenBuffers( 1, &vbo );
-	glBindBuffer( GL_ARRAY_BUFFER, vbo );
-	glBufferData( GL_ARRAY_BUFFER, 9 * sizeof( GLfloat ), points, GL_STATIC_DRAW );
+		glGenBuffers( 1, &vbo );
+		glBindBuffer( GL_ARRAY_BUFFER, vbo );
+		glBufferData( GL_ARRAY_BUFFER, 9 * sizeof( GLfloat ), points, GL_STATIC_DRAW );
 
-	glGenVertexArrays( 1, &vao );
-	glBindVertexArray( vao );
-	glEnableVertexAttribArray( 0 );
-	glBindBuffer( GL_ARRAY_BUFFER, vbo );
-	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
+		glGenVertexArrays( 1, &vao );
+		glBindVertexArray( vao );
+		glEnableVertexAttribArray( 0 );
+		glBindBuffer( GL_ARRAY_BUFFER, vbo );
+		glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
 
-	vs = glCreateShader( GL_VERTEX_SHADER );
-	glShaderSource( vs, 1, &vertex_shader, NULL );
-	glCompileShader( vs );
-	fs = glCreateShader( GL_FRAGMENT_SHADER );
-	glShaderSource( fs, 1, &fragment_shader, NULL );
-	glCompileShader( fs );
-	shader_programme = glCreateProgram();
-	glAttachShader( shader_programme, fs );
-	glAttachShader( shader_programme, vs );
-	glLinkProgram( shader_programme );
+		vs = glCreateShader( GL_VERTEX_SHADER );
+		glShaderSource( vs, 1, &vertex_shader, NULL );
+		glCompileShader( vs );
+		fs = glCreateShader( GL_FRAGMENT_SHADER );
+		glShaderSource( fs, 1, &fragment_shader, NULL );
+		glCompileShader( fs );
+		shader_programme = glCreateProgram();
+		glAttachShader( shader_programme, fs );
+		glAttachShader( shader_programme, vs );
+		glLinkProgram( shader_programme );
 
-	previous_seconds = glfwGetTime();
+		previous_seconds = glfwGetTime();
 	
 		_update_fps_counter( window );
 		// wipe the drawing surface clear
@@ -260,7 +260,7 @@ int main() {
 		}
 		for (int i=0;i<9;i=i+3){
 			points[i] = points[i] + 0.001;
-			std::cout << points[i] << "\n";
+			//std::cout << points[i] << "\n";
 		}
 		// put the stuff we've been drawing onto the display
 		glfwSwapBuffers( window );
