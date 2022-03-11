@@ -82,8 +82,8 @@ float g_gl_height = 800.0;
 
 /* we will tell GLFW to run this function whenever the framebuffer size is changed */
 void glfw_framebuffer_size_callback( GLFWwindow *window, int width, int height ) {
-	g_gl_width = width;
-	g_gl_height = height;
+	g_gl_width = (float)width;
+	g_gl_height = (float)height;
 	printf( "width %i height %i\n", width, height );
 	/* update any perspective matrices used here */
 }
@@ -158,11 +158,38 @@ void _update_fps_counter( GLFWwindow *window ) {
 }
 
 int main() {
+	const float PI = acos(-1);
 	auto t_start = std::chrono::high_resolution_clock::now();
 	GLFWwindow *window;
 	const GLubyte *renderer;
 	const GLubyte *version;
-	GLfloat points[] = { 0.0f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, -0.5f, -0.5f, 0.0f };
+	GLfloat vertices[332];
+	int sectorCount = 10;
+	int stackCount = 10;
+	float radius = 1.0f;
+
+	for(int i = 0; i <= stackCount; ++i)
+	{
+    	for(int j = 0; j <= sectorCount; ++j)
+   		{
+        	vertices[3*sectorCount*i+3*j] = radius * cosf(-PI/2+PI/stackCount * j) * cosf(2*PI/sectorCount * i);             // r * cos(u) * cos(v)
+        	vertices[3*sectorCount*i+3*j+1] = radius * cosf(-PI/2+PI/stackCount * j) * sinf(2*PI/sectorCount * i);             // r * cos(u) * sin(v)
+			vertices[3*sectorCount*i+3*j+2] = radius*sinf(-PI/2+PI/stackCount*j); //r* sin (u)
+			
+        	printf( "vertices[%d] = %f\n", 3*sectorCount*i+3*j, vertices[3*sectorCount*i+3*j]);
+			printf( "vertices[%d] = %f\n", 3*sectorCount*i+3*j+1, vertices[3*sectorCount*i+3*j+1]);
+			printf( "vertices[%d] = %f\n", 3*sectorCount*i+3*j+2, vertices[3*sectorCount*i+3*j+2]);
+		}
+	}	
+	/*vertices[0] = 0.0f;
+	vertices[1]= 0.5f;
+	vertices[2]= 0.0f;
+	vertices[3]= 0.5f;
+	vertices[4]= -0.5f;
+	vertices[5]= 0.0f;
+	vertices[6]= -0.5f;
+	vertices[7]= -0.5f;
+	vertices[8]= 0.0f;*/
 	GLuint vbo;
 	GLuint vao;
 	const char *vertex_shader = "#version 410\n"
@@ -171,6 +198,7 @@ int main() {
 		"uniform mat4 view;"
 		"uniform mat4 proj;"
 		"void main() {"
+		"  gl_PointSize = 10.0;"
 		"  gl_Position = proj * view * model * vec4( vp, 1.0 );"
 		"}";
 
@@ -226,11 +254,12 @@ int main() {
 	log_gl_params();
 	// tell GL to only draw onto a pixel if the shape is closer to the viewer
 	glEnable( GL_DEPTH_TEST ); // enable depth-testing
+	glEnable(GL_PROGRAM_POINT_SIZE);
 	glDepthFunc( GL_LESS );		 // depth-testing interprets a smaller value as "closer"
 	
 	glGenBuffers( 1, &vbo );
 	glBindBuffer( GL_ARRAY_BUFFER, vbo );
-	glBufferData( GL_ARRAY_BUFFER, 9 * sizeof( GLfloat ), points, GL_STATIC_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
 
 	glGenVertexArrays( 1, &vao );
 	glBindVertexArray( vao );
@@ -255,7 +284,7 @@ int main() {
 
     // Set up projection
     glm::mat4 view = glm::lookAt(
-        glm::vec3(1.2f, 1.2f, 1.2f),
+        glm::vec3(0.0f, 5.0f, 5.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 0.0f, 1.0f)
     );
@@ -278,14 +307,20 @@ int main() {
         float time = std::chrono::duration_cast<std::chrono::duration<float>>(t_now - t_start).count();
 
 		glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(
+        model = glm::rotate(
             model,
+			time * glm::radians(90.0f), 
             glm::vec3(0.0f, 0.0f, time * 0.1* 1.0f)
         );
+		
+		/*model = glm::translate(
+            model,
+            glm::vec3(0.0f, time * 0.1* 1.0f, 0.0f)
+        );*/
         glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 		
 		// draw points 0-3 from the currently bound VAO with current in-use shader
-		glDrawArrays( GL_TRIANGLES, 0, 3 );
+		glDrawArrays( GL_POINTS, 0, 332);
 		// update other events like input handling
 		glfwPollEvents();
 		if ( GLFW_PRESS == glfwGetKey( window, GLFW_KEY_ESCAPE ) ) {
@@ -294,7 +329,7 @@ int main() {
 		
 		// put the stuff we've been drawing onto the display
 		glfwSwapBuffers( window );
-		printf("%f \n", time);
+		//printf("%f \n", time);
 	}
 
 	// close GL context and any other GLFW resources
