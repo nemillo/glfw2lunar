@@ -7,7 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include "sphere.hpp"
 
 #define GL_LOG_FILE "gl.log"
 std::ofstream log_file;
@@ -63,6 +63,8 @@ int main() {
 	float fps = 0.0f;
 	float frame_time_cummulated = 0.0f;
 
+	Sphere sphere1;
+
 	restart_gl_log();
 	auto t_start = std::chrono::high_resolution_clock::now();
 	
@@ -70,24 +72,6 @@ int main() {
 	log_file << "t_start: " << t_start << std::endl;
 	log_file.close();
 	
-	for(int i = 0; i <= stackCount; ++i)
-	{
-    	for(int j = 0; j <= sectorCount; ++j)
-   		{
-        	vertices[3*sectorCount*i+3*j] = radius * cosf(-glm::pi<float>()/2+glm::pi<float>()/stackCount * j) * cosf(2*glm::pi<float>()/sectorCount * i);             // r * cos(u) * cos(v)
-        	vertices[3*sectorCount*i+3*j+1] = radius * cosf(-glm::pi<float>()/2+glm::pi<float>()/stackCount * j) * sinf(2*glm::pi<float>()/sectorCount * i);             // r * cos(u) * sin(v)
-			vertices[3*sectorCount*i+3*j+2] = radius*sinf(-glm::pi<float>()/2+glm::pi<float>()/stackCount*j); //r* sin (u)
-		}
-	}	
-	/*vertices[0] = 0.0f;
-	vertices[1]= 0.5f;
-	vertices[2]= 0.0f;
-	vertices[3]= 0.5f;
-	vertices[4]= -0.5f;
-	vertices[5]= 0.0f;
-	vertices[6]= -0.5f;
-	vertices[7]= -0.5f;
-	vertices[8]= 0.0f;*/
 	GLuint vbo;
 	GLuint vao;
 	const char *vertex_shader = "#version 410\n"
@@ -103,7 +87,7 @@ int main() {
 	const char *fragment_shader = "#version 410\n"
 		"out vec4 frag_colour;"
 		"void main() {"
-		"  frag_colour = vec4( 0.5, 0.0, 0.5, 1.0 );"
+		"  frag_colour = vec4( 0.5, 0.5, 0.5, 1.0 );"
 		"}";
 	GLuint shader_programme, vs, fs;
 
@@ -112,8 +96,6 @@ int main() {
 	if ( !glfwInit() ) {
 		return 1;
 	}
-
-
 	// set anti-aliasing factor to make diagonal edges appear less jagged
 	glfwWindowHint( GLFW_SAMPLES, 4 );
 
@@ -147,16 +129,6 @@ int main() {
 	glEnable(GL_PROGRAM_POINT_SIZE);
 	glDepthFunc( GL_LESS );		 // depth-testing interprets a smaller value as "closer"
 	
-	glGenBuffers( 1, &vbo );
-	glBindBuffer( GL_ARRAY_BUFFER, vbo );
-	glBufferData( GL_ARRAY_BUFFER, sizeof( vertices ), vertices, GL_STATIC_DRAW );
-
-	glGenVertexArrays( 1, &vao );
-	glBindVertexArray( vao );
-	glEnableVertexAttribArray( 0 );
-	glBindBuffer( GL_ARRAY_BUFFER, vbo );
-	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, NULL );
-
 	vs = glCreateShader( GL_VERTEX_SHADER );
 	glShaderSource( vs, 1, &vertex_shader, NULL );
 	glCompileShader( vs );
@@ -168,7 +140,9 @@ int main() {
 	glAttachShader( shader_programme, vs );
 	glLinkProgram( shader_programme );
 	glUseProgram( shader_programme );
-	glBindVertexArray( vao );
+	
+	GLuint vp = glGetAttribLocation(shader_programme, "vp");
+	sphere1.init(vp,0.5f);
 
 	GLint uniModel = glGetUniformLocation(shader_programme, "model");
 
@@ -205,12 +179,12 @@ int main() {
 		
 		model = glm::translate(
             model,
-            glm::vec3(0.0f, 0.0f, -time * 0.1* 1.0f)
+            glm::vec3(0.0f, 0.0f, -time * 0.5* 1.0f)
         );
         glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 		
 		// draw points 0-3 from the currently bound VAO with current in-use shader
-		glDrawArrays( GL_POINTS, 0, 332);
+		sphere1.draw();
 		// update other events like input handling
 		glfwPollEvents();
 		if ( GLFW_PRESS == glfwGetKey( window, GLFW_KEY_ESCAPE ) ) {
@@ -242,5 +216,6 @@ int main() {
 
 	// close GL context and any other GLFW resources
 	glfwTerminate();
+	sphere1.cleanup();
 	return 0;
 }
