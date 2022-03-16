@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "sphere.hpp"
+#include "plane.hpp"
 
 #define GL_LOG_FILE "gl.log"
 std::ofstream log_file;
@@ -56,14 +57,18 @@ int main() {
 	GLFWwindow *window;
 	const GLubyte *renderer;
 	const GLubyte *version;
-	GLfloat vertices[332];
 	int sectorCount = 10;
 	int stackCount = 10;
-	float radius = 1.0f;
 	float fps = 0.0f;
+	float frame_time = 0.0f;
 	float frame_time_cummulated = 0.0f;
+	const float dt = 0.001;
+	const float gravity = 9.80;
+	const float R = 0.5f;
 
 	Sphere sphere1;
+	Sphere sphere2;
+	Plane plane1;
 
 	restart_gl_log();
 	auto t_start = std::chrono::high_resolution_clock::now();
@@ -142,13 +147,25 @@ int main() {
 	glUseProgram( shader_programme );
 	
 	GLuint vp = glGetAttribLocation(shader_programme, "vp");
-	sphere1.init(vp,0.5f);
+	sphere1.init(vp,R);
+	sphere1.setMass(1.0f);
+	sphere1.setPosition(glm::vec3(1.0f,1.0f,2.0f));
+	sphere1.setVelocity(glm::vec3(-1.0f,-0.5f,0.0f));
+	sphere1.setAcceleration(glm::vec3(0.0f,0.0f,-gravity));
+
+	sphere2.init(vp,R/2);
+	sphere2.setMass(1.0f);
+	sphere2.setPosition(glm::vec3(-1.0f,-1.0f,2.0f));
+	sphere2.setVelocity(glm::vec3(0.0f,0.0f,0.0f));
+	sphere2.setAcceleration(glm::vec3(0.0f,0.0f,0.0f));
+
+	plane1.init(vp,0.0f);
 
 	GLint uniModel = glGetUniformLocation(shader_programme, "model");
 
     // Set up projection
     glm::mat4 view = glm::lookAt(
-        glm::vec3(0.0f, 5.0f, 5.0f),
+        glm::vec3(0.0f, -5.0f, 5.0f),
         glm::vec3(0.0f, 0.0f, 0.0f),
         glm::vec3(0.0f, 0.0f, 1.0f)
     );
@@ -168,23 +185,119 @@ int main() {
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 		glViewport( 0, 0, g_gl_width, g_gl_height );
 
-		
-
 		glm::mat4 model = glm::mat4(1.0f);
+		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
+		plane1.draw();
+
+		sphere1.setVelocity(sphere1.getAcceleration()*frame_time + sphere1.getVelocity());
+		sphere1.setPosition(sphere1.getVelocity()*frame_time + sphere1.getPosition());
+		if (sphere1.getPosition().z <= R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere1.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.z = -oldVelocity.z;
+			sphere1.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere1.getPosition();
+			newPosition = oldPosition;
+			newPosition.z = R;
+			sphere1.setPosition(newPosition);
+			
+		}
+
+		if (sphere1.getPosition().x <= -2+R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere1.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.x = -oldVelocity.x;
+			sphere1.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere1.getPosition();
+			newPosition = oldPosition;
+			newPosition.x = -2+R;
+			sphere1.setPosition(newPosition);
+			
+		}
+
+		if (sphere1.getPosition().x >= 2-R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere1.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.x = -oldVelocity.x;
+			sphere1.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere1.getPosition();
+			newPosition = oldPosition;
+			newPosition.x = 2-R;
+			sphere1.setPosition(newPosition);
+			
+		}
+
+		if (sphere1.getPosition().y <= -2+R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere1.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.y = -oldVelocity.y;
+			sphere1.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere1.getPosition();
+			newPosition = oldPosition;
+			newPosition.y = -2+R;
+			sphere1.setPosition(newPosition);
+			
+		}
+
+		if (sphere1.getPosition().y >= 2-R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere1.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.y = -oldVelocity.y;
+			sphere1.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere1.getPosition();
+			newPosition = oldPosition;
+			newPosition.y = 2-R;
+			sphere1.setPosition(newPosition);
+			
+		}
+		model = glm::translate(
+            model,
+            sphere1.getPosition()
+        );
+		
         model = glm::rotate(
             model,
 			time * glm::radians(90.0f), 
             glm::vec3(0.0f, 0.0f, time * 0.1* 1.0f)
         );
+        glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
 		
+		// render model
+		sphere1.draw();
+
+		model = glm::mat4(1.0f);
 		model = glm::translate(
             model,
-            glm::vec3(0.0f, 0.0f, -time * 0.5* 1.0f)
+            sphere2.getPosition()
         );
-        glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model));
 		
-		// draw points 0-3 from the currently bound VAO with current in-use shader
-		sphere1.draw();
+		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
+		sphere2.draw();
 		// update other events like input handling
 		glfwPollEvents();
 		if ( GLFW_PRESS == glfwGetKey( window, GLFW_KEY_ESCAPE ) ) {
@@ -194,7 +307,7 @@ int main() {
 		// put the stuff we've been drawing onto the display
 		glfwSwapBuffers( window );
 		auto t_after_frame_display = std::chrono::high_resolution_clock::now();
-		float frame_time = std::chrono::duration_cast<std::chrono::duration<float>>(t_after_frame_display - t_now).count();
+		frame_time = std::chrono::duration_cast<std::chrono::duration<float>>(t_after_frame_display - t_now).count();
 		fps = 1/frame_time;
 		frame_time_cummulated += frame_time;
 
@@ -217,5 +330,6 @@ int main() {
 	// close GL context and any other GLFW resources
 	glfwTerminate();
 	sphere1.cleanup();
+	plane1.cleanup();
 	return 0;
 }
