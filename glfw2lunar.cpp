@@ -153,11 +153,11 @@ int main() {
 	sphere1.setVelocity(glm::vec3(-1.0f,-0.5f,0.0f));
 	sphere1.setAcceleration(glm::vec3(0.0f,0.0f,-gravity));
 
-	sphere2.init(vp,R/2);
+	sphere2.init(vp,R);
 	sphere2.setMass(1.0f);
 	sphere2.setPosition(glm::vec3(-1.0f,-1.0f,2.0f));
 	sphere2.setVelocity(glm::vec3(0.0f,0.0f,0.0f));
-	sphere2.setAcceleration(glm::vec3(0.0f,0.0f,0.0f));
+	sphere2.setAcceleration(glm::vec3(0.0f,0.0f,-gravity));
 
 	plane1.init(vp,0.0f);
 
@@ -275,28 +275,169 @@ int main() {
 			sphere1.setPosition(newPosition);
 			
 		}
-		model = glm::translate(
-            model,
+		
+		sphere2.setVelocity(sphere2.getAcceleration()*frame_time + sphere2.getVelocity());
+		sphere2.setPosition(sphere2.getVelocity()*frame_time + sphere2.getPosition());
+		if (sphere2.getPosition().z <= R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere2.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.z = -oldVelocity.z;
+			sphere2.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere2.getPosition();
+			newPosition = oldPosition;
+			newPosition.z = R;
+			sphere2.setPosition(newPosition);
+			
+		}
+
+		if (sphere2.getPosition().x <= -2+R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere2.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.x = -oldVelocity.x;
+			sphere2.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere2.getPosition();
+			newPosition = oldPosition;
+			newPosition.x = -2+R;
+			sphere2.setPosition(newPosition);
+			
+		}
+
+		if (sphere2.getPosition().x >= 2-R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere2.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.x = -oldVelocity.x;
+			sphere2.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere2.getPosition();
+			newPosition = oldPosition;
+			newPosition.x = 2-R;
+			sphere2.setPosition(newPosition);
+			
+		}
+
+		if (sphere2.getPosition().y <= -2+R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere2.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.y = -oldVelocity.y;
+			sphere2.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere2.getPosition();
+			newPosition = oldPosition;
+			newPosition.y = -2+R;
+			sphere2.setPosition(newPosition);
+			
+		}
+
+		if (sphere2.getPosition().y >= 2-R){
+			glm::vec3 oldVelocity;
+			glm::vec3 newVelocity;
+			oldVelocity = sphere2.getVelocity();
+			newVelocity = oldVelocity;
+			newVelocity.y = -oldVelocity.y;
+			sphere2.setVelocity(newVelocity);
+
+			glm::vec3 oldPosition;
+			glm::vec3 newPosition;
+			oldPosition = sphere2.getPosition();
+			newPosition = oldPosition;
+			newPosition.y = 2-R;
+			sphere2.setPosition(newPosition);
+			
+		}
+		
+		
+		if (glm::distance(sphere1.getPosition(),sphere2.getPosition()) <= 2*R){
+			glm::vec3 oldPosition1;
+			glm::vec3 oldPosition2;
+			glm::vec3 oldVelocity1;
+			glm::vec3 oldVelocity2;
+			glm::vec3 newPosition1;
+			glm::vec3 newPosition2;
+			glm::vec3 newVelocity1;
+			glm::vec3 newVelocity2;
+
+			oldPosition1 = sphere1.getPosition();
+			oldPosition2 = sphere2.getPosition();
+			oldVelocity1 = sphere1.getVelocity();
+			oldVelocity2 = sphere2.getVelocity();
+
+			/*newVelocity1 = oldVelocity1 + 
+			     glm::length(oldPosition2 - oldPosition1)*
+				 glm::dot(oldVelocity2,(oldPosition2 - oldPosition1))/
+				 glm::dot((oldPosition2 - oldPosition1),(oldPosition2 - oldPosition1)) -
+				 glm::length(oldPosition1 - oldPosition2)*
+				 glm::dot(oldVelocity1,(oldPosition1 - oldPosition2))/
+				 glm::dot((oldPosition1 - oldPosition2),(oldPosition1 - oldPosition2));
+
+			newVelocity2 = oldVelocity2 + 
+			     glm::length(oldPosition2 - oldPosition1)*
+				 glm::dot(oldVelocity1,(oldPosition2 - oldPosition1))/
+				 glm::dot((oldPosition2 - oldPosition1),(oldPosition2 - oldPosition1)) -
+				 glm::length(oldPosition1 - oldPosition2)*
+				 glm::dot(oldVelocity2,(oldPosition1 - oldPosition2))/
+				 glm::dot((oldPosition1 - oldPosition2),(oldPosition1 - oldPosition2));*/
+
+			glm::vec3 vecx = oldPosition1 - oldPosition2;
+			glm::normalize(vecx);
+			float x1 = glm::dot(vecx,oldVelocity1);
+			glm::vec3 vecv1x = vecx * x1;
+			glm::vec3 vecv1y = oldVelocity1 - vecv1x;
+			float m1 = sphere1.getMass();
+
+			vecx = -vecx;
+			float x2 = glm::dot(vecx,oldVelocity2);
+			glm::vec3 vecv2x = vecx * x2;
+			glm::vec3 vecv2y = oldVelocity2 - vecv2x;
+			float m2 = sphere2.getMass();
+
+			newVelocity1 = vecv1x*(m1-m2)/(m1+m2)+vecv2x*(2*m2)/(m1+m2) + vecv1y;
+			newVelocity2 = vecv1x*(2*m1)/(m1+m2)+vecv2x*(m2-m1)/(m1+m2) + vecv2y;
+
+
+			sphere1.setVelocity(newVelocity1);
+			sphere2.setVelocity(newVelocity2);
+		}
+
+		glm::mat4 model1 = glm::mat4(1.0f);
+		model1 = glm::translate(
+            model1,
             sphere1.getPosition()
         );
 		
-        model = glm::rotate(
-            model,
+        model1 = glm::rotate(
+            model1,
 			time * glm::radians(90.0f), 
             glm::vec3(0.0f, 0.0f, time * 0.1* 1.0f)
         );
-        glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
-		
-		// render model
-		sphere1.draw();
 
-		model = glm::mat4(1.0f);
-		model = glm::translate(
-            model,
+		glm::mat4 model2 = glm::mat4(1.0f);
+		model2 = glm::translate(
+            model2,
             sphere2.getPosition()
         );
-		
-		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
+
+		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model1)); //sets the uniform matrix model in shader
+		sphere1.draw();
+
+		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model2)); //sets the uniform matrix model in shader
 		sphere2.draw();
 		// update other events like input handling
 		glfwPollEvents();
