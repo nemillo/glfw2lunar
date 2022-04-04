@@ -9,6 +9,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "sphere.hpp"
 #include "plane.hpp"
+#include "line.hpp"
 
 #define GL_LOG_FILE "gl.log"
 
@@ -268,6 +269,7 @@ int main() {
 	Sphere sphere1;
 	Sphere sphere2;
 	Plane plane1;
+	Line line1;
 
 	restart_gl_log();
 	auto t_start = std::chrono::high_resolution_clock::now();
@@ -358,6 +360,8 @@ int main() {
 
 	plane1.init(vp,0.0f);
 
+	line1.init(vp,glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,0.0f,4.0f));
+	
 	GLint uniModel = glGetUniformLocation(shader_programme, "model");
 
     // Set up projection
@@ -385,6 +389,7 @@ int main() {
 		glm::mat4 model = glm::mat4(1.0f);
 		glUniformMatrix4fv(uniModel, 1, GL_FALSE, glm::value_ptr(model)); //sets the uniform matrix model in shader
 		plane1.draw();
+		//line1.draw();
 
 		IntegrateVerlet(sphere1,frame_time);
 		CheckBC(sphere1);
@@ -448,5 +453,6 @@ int main() {
 	glfwTerminate();
 	sphere1.cleanup();
 	plane1.cleanup();
+	line1.cleanup();
 	return 0;
 }
