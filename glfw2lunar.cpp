@@ -13,7 +13,7 @@
 
 #define GL_LOG_FILE "gl.log"
 
-const float gravity = 9.80;
+const float gravity = 9.80665f;;
 const float R = 0.5f;
 
 std::ofstream log_file;
@@ -352,11 +352,13 @@ int main() {
 	sphere1.setMass(1.0f);
 	sphere1.setPosition(glm::vec3(1.0f,1.0f,2.0f));
 	sphere1.setVelocity(glm::vec3(-1.0f,-0.5f,0.0f));
+	updateAcceleration(sphere1);
 
 	sphere2.init(vp,R);
 	sphere2.setMass(1.0f);
 	sphere2.setPosition(glm::vec3(-1.0f,-1.0f,2.0f));
 	sphere2.setVelocity(glm::vec3(0.0f,0.0f,0.0f));
+	updateAcceleration(sphere2);
 
 	plane1.init(vp,0.0f);
 
